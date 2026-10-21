@@ -234,7 +234,7 @@ Users will come back with questions and tasks. Common ones:
 
 ### Architecture
 - **Heartbeat loop** (`main.py`): Every cycle → check quiet hours → check budget → decide → act → log → sleep
-- **Brain** (`brain.py`): Wraps `claude -p --output-format json --dangerously-skip-permissions` for headless Claude calls; records exact per-call token usage into `usage_events`
+- **Brain** (`brain.py`): Wraps `claude -p --output-format json` for headless Claude calls, built by `claude_runtime.build_command` with `--safe-mode --strict-mcp-config --tools ""` (no tools, no MCP); records exact per-call token usage into `usage_events`
 - **State** (`state.py`): SQLite at `data/harvey.db` with tables for companies, prospects, campaigns, conversations, actions, usage
 - **Usage tracking** (`usage.py`, `integrations/quota.py`): per-call attribution (agent/task/model/tokens) for Harvey's OWN Claude calls only — it never scans your other Claude Code sessions — plus a live subscription-quota gauge read the same way Claude Code's `/usage` does. The budget check throttles Harvey against real quota utilization so it always leaves headroom for your own interactive Claude use (`usage.max_daily_claude_percent`). Dashboard has a Usage tab; CLI has `harvey usage`.
 - **Skills** (`skills/`): Markdown knowledge files injected into agent prompts
