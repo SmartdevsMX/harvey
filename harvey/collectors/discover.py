@@ -732,7 +732,7 @@ class GooglePlacesText(DiscoveryProvider):
     kind = "listings"
     blurb = ("Google Maps listings by text search, with phone, website and "
              "rating. Broad coverage of local businesses in Mexico.")
-    cost_note = "$0.032 per request (Text Search Pro), up to 3 requests per query"
+    cost_note = "$0.035 per request (Text Search Enterprise: phone, website and rating fields), up to 3 requests per query"
     free_tier = ""
     signup_url = "https://console.cloud.google.com/apis/library/places-backend.googleapis.com"
     env_keys = ("google_places_api_key",)
@@ -747,7 +747,7 @@ class GooglePlacesText(DiscoveryProvider):
         "places.nationalPhoneNumber", "places.primaryType", "places.types",
         "nextPageToken",
     ])
-    PRICE_PER_REQUEST = 0.032
+    PRICE_PER_REQUEST = 0.035
     MAX_PAGES = 3
     # A listing with few reviews is usually dormant or a hobby, not the
     # operating business an outreach run is after, and it costs the same
@@ -755,8 +755,9 @@ class GooglePlacesText(DiscoveryProvider):
     min_reviews = 100
 
     def estimate(self, queries):
-        # Worst case of all pages per query. Calibrated against the ~$1 per
-        # 32 requests observed on 20-oct, about $0.031 each, so it tracks the bill.
+        # Worst case of all pages per query. The phone, website and rating
+        # fields bill at the Enterprise SKU ($35 / 1,000), so this errs high
+        # against the ~$1 per 32 requests observed on 20-oct.
         return self.PRICE_PER_REQUEST * self.MAX_PAGES * len(queries)
 
     async def fetch(self, client, env, query):

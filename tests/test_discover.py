@@ -870,7 +870,7 @@ async def test_google_places_stops_at_three_pages_and_bills_each_one():
     async with _client(handler) as client:
         await provider.fetch(client, PLACES_KEY, PLACES_QUERY)
     assert len(seen) == 3
-    assert provider.last_cost == pytest.approx(3 * 0.032)
+    assert provider.last_cost == pytest.approx(3 * 0.035)
 
 
 @pytest.mark.asyncio
@@ -910,9 +910,9 @@ async def test_google_places_error_names_the_problem_and_never_the_key():
 def test_google_places_estimate_scales_with_queries():
     provider = D.GooglePlacesText()
     one = [PLACES_QUERY]
-    assert provider.estimate(one) == pytest.approx(0.096)  # 0.032 x 3 pages
-    assert provider.estimate(one * 4) == pytest.approx(4 * 0.096)
-    assert D.estimate_cost("google_places", one) == pytest.approx(0.096)
+    assert provider.estimate(one) == pytest.approx(0.105)  # 0.035 x 3 pages
+    assert provider.estimate(one * 4) == pytest.approx(4 * 0.105)
+    assert D.estimate_cost("google_places", one) == pytest.approx(0.105)
 
 
 def test_google_places_needs_its_key_and_is_registered(monkeypatch):
