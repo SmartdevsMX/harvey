@@ -1,0 +1,48 @@
+{
+  "places": [
+    {
+      "id": "ChIJUxNu_syYKoQRlMl3tfOBXoE",
+      "types": [
+        "hot_dog_restaurant",
+        "fast_food_restaurant",
+        "american_restaurant",
+        "restaurant",
+        "food",
+        "point_of_interest",
+        "establishment"
+      ],
+      "nationalPhoneNumber": "444 130 9793",
+      "formattedAddress": "Basalenque #415, Avenida, codigo postal 78240 San Luis Potosí, S.L.P.",
+      "rating": 4.2,
+      "websiteUri": "https://laperrerahotdogs.mx/",
+      "userRatingCount": 1090,
+      "displayName": {
+        "text": "La Perrera",
+        "languageCode": "es"
+      },
+      "primaryType": "hot_dog_restaurant"
+    },
+    {
+      "id": "ChIJBfAwHYahKoQRbHs2KPncEYY",
+      "types": [
+        "hamburger_restaurant",
+        "hot_dog_restaurant",
+        "american_restaurant",
+        "restaurant",
+        "food",
+        "point_of_interest",
+        "establishment"
+      ],
+      "nationalPhoneNumber": "444 579 0985",
+      "formattedAddress": "Av. San Pedro 317-b1, San Francisco 3er Plano, 78434 Soledad de Graciano Sánchez, S.L.P.",
+      "rating": 4.6,
+      "websiteUri": "https://www.facebook.com/pages/category/Grocery-Store/Hamburguesas-Dogos-100465648360367/",
+      "userRatingCount": 177,
+      "displayName": {
+        "text": "HAMBURGUESAS & DOGOS",
+        "languageCode": "es"
+      },
+      "primaryType": "hamburger_restaurant"
+    }
+  ]
+}

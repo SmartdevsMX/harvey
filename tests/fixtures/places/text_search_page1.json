@@ -1,0 +1,83 @@
+{
+  "places": [
+    {
+      "id": "ChIJoSWWkAaiKoQRAl0KcJP057Y",
+      "types": [
+        "mexican_restaurant",
+        "breakfast_restaurant",
+        "restaurant",
+        "food",
+        "point_of_interest",
+        "establishment"
+      ],
+      "nationalPhoneNumber": "444 814 3637",
+      "formattedAddress": "Prol Pedro Vallejo 605, Barrio de San Miguelito, 78000 San Luis Potosí, S.L.P.",
+      "rating": 4.4,
+      "websiteUri": "http://www.facebook.com/antojitossanmiguelito",
+      "userRatingCount": 2063,
+      "displayName": {
+        "text": "Antojitos San Miguelito",
+        "languageCode": "es"
+      },
+      "primaryType": "mexican_restaurant"
+    },
+    {
+      "id": "ChIJf47nPKGjKoQR-n4bGGp8vik",
+      "types": [
+        "mexican_restaurant",
+        "restaurant",
+        "food",
+        "point_of_interest",
+        "establishment"
+      ],
+      "nationalPhoneNumber": "444 773 8214",
+      "formattedAddress": "Calz de Guadalupe 610, Juárez, 78340 San Luis Potosí, S.L.P.",
+      "rating": 4,
+      "websiteUri": "https://www.facebook.com/sanmiguelitoantojitos/?locale=es_LA",
+      "userRatingCount": 118,
+      "displayName": {
+        "text": "Antojitos San Miguelito Sucursal Calzada",
+        "languageCode": "es"
+      },
+      "primaryType": "mexican_restaurant"
+    },
+    {
+      "id": "ChIJg2m9yLGYKoQRcLh7k5yeh-Y",
+      "types": [
+        "restaurant",
+        "food",
+        "point_of_interest",
+        "establishment"
+      ],
+      "nationalPhoneNumber": "444 817 9545",
+      "formattedAddress": "78269, Alfredo M. Terrazas 1175, Tangamanga, 78280 San Luis Potosí, S.L.P.",
+      "rating": 4.4,
+      "userRatingCount": 215,
+      "displayName": {
+        "text": "Antojitos Huastecos",
+        "languageCode": "es"
+      },
+      "primaryType": "restaurant"
+    },
+    {
+      "id": "ChIJK-VfarKYKoQRA_Vn4qhzj2E",
+      "types": [
+        "mexican_restaurant",
+        "restaurant",
+        "food",
+        "point_of_interest",
+        "establishment"
+      ],
+      "nationalPhoneNumber": "444 617 2924",
+      "formattedAddress": "Av. Cuauhtémoc 605-Int. C, Tequis, Cuauhtemoc, 78250 San Luis Potosí, S.L.P.",
+      "rating": 4.6,
+      "userRatingCount": 51,
+      "displayName": {
+        "text": "Tita Antojitos",
+        "languageCode": "es"
+      },
+      "primaryType": "mexican_restaurant"
+    }
+  ],
+  "nextPageToken": "Aa-ngMZ8d98LFm6FRnSAEP9_p9kT5yBiw4hm_m6AeUhnKTaGGifcDSc_V3X5iYHPoPxGB158sWxWCimiav0A10WiMYbeaOGrNENBCu6apzFemlDljWkLZxaZIdHDKumHkSxhHDybcIdxptPEJwS-vclC2NbJ5vexlbq1ZQhapC61MSw4FWNV3mTyjMEmfz7dcmLsOJXwbcBZjgyEuw8n6ZEmF_VSKi2B74eU1kL7wFehgOnXjMvBLz4518BIaTMUse0Ao9wQzSSfvEGvLYiEPdC0LppAMlYsKY4aPoulPV5VK-L-SWegh4RihW7E1C5DojjsNZoZzFfgR1Gh3VJH1xLVh8v1IsRw8juqBxV-o_kG4EaTxN-Z1YyVw6va_DiP5YY71C6pcqzZskpIgeA5pigL1LmoRIrq5o8ekWsub85WrIlOaCwKILQDtA17U82y40yi32VlTS4Kd-M-4wPlrT793nKM2ZSWkkMZTBmC0iNmjMsaq5NANhDcTf_CXKxhxOrGBpGxI3M8Dq_TONaZAZXiBOQ8rJU0vGVqtalYW8Rq3jxwSHy9LRY5i_w-zWpb08hmfU_U4txwyKa9Vp142kKx5qq5Cl4R35-XvooVe03xPeUaF1zKcELBpXg_5p__fn6Upu1M9B0XS1jJ0pw5zCoEVz_czjs1L8W8gVy9Vu3h6A1MWy_ZZiJSdDgObchuXbaazNC5rfD5_SVM6tvKQOh3dbxVgn95Aj65ltvc886a4XfPdaFMoGmSR0WD5LD_q1HHcF6OvKqefjKqOAYd6zHzEeJZMa-hatWWNZzVdjFNVA6ld24WVmr-iVk2N7ldmC6fpMNf3KurUWw"
+}
