@@ -719,12 +719,108 @@ class OpenStreetMap(DiscoveryProvider):
         return out
 
 
+class GooglePlacesText(DiscoveryProvider):
+    """Google Maps businesses by text search, with phone, website and rating.
+
+    Wide coverage of local businesses where OpenStreetMap is thin, and the
+    listing carries the phone and website that outreach needs. Billed per
+    request, so the page cap is what keeps a run's cost honest.
+    """
+
+    key = "google_places"
+    label = "Google Places (New)"
+    kind = "listings"
+    blurb = ("Google Maps listings by text search, with phone, website and "
+             "rating. Broad coverage of local businesses in Mexico.")
+    cost_note = "$0.035 per request (Text Search Enterprise: phone, website and rating fields), up to 3 requests per query"
+    free_tier = ""
+    signup_url = "https://console.cloud.google.com/apis/library/places-backend.googleapis.com"
+    env_keys = ("google_places_api_key",)
+    caveat = "Listings with fewer than 100 Google reviews are dropped."
+
+    URL = "https://places.googleapis.com/v1/places:searchText"
+    # Same field mask as the prototype. The phone and website fields are what
+    # the listing is for, so they stay in even though they raise the price.
+    FIELDS = ",".join([
+        "places.id", "places.displayName", "places.formattedAddress",
+        "places.userRatingCount", "places.rating", "places.websiteUri",
+        "places.nationalPhoneNumber", "places.primaryType", "places.types",
+        "nextPageToken",
+    ])
+    PRICE_PER_REQUEST = 0.035
+    MAX_PAGES = 3
+    # A listing with few reviews is usually dormant or a hobby, not the
+    # operating business an outreach run is after, and it costs the same
+    # request to fetch. Overridable per instance or subclass.
+    min_reviews = 100
+
+    def estimate(self, queries):
+        # Worst case of all pages per query. The phone, website and rating
+        # fields bill at the Enterprise SKU ($35 / 1,000), so this errs high
+        # against the ~$1 per 32 requests observed on 20-oct.
+        return self.PRICE_PER_REQUEST * self.MAX_PAGES * len(queries)
+
+    async def fetch(self, client, env, query):
+        headers = {"X-Goog-Api-Key": env["google_places_api_key"],
+                   "X-Goog-FieldMask": self.FIELDS,
+                   "Content-Type": "application/json"}
+        body = {"textQuery": f"{query.term} en {query.location}", "languageCode": "es",
+                "regionCode": "MX", "pageSize": 20}
+        out = []
+        token = None
+        pages = 0
+        while pages < self.MAX_PAGES and len(out) < query.limit:
+            if token:
+                body["pageToken"] = token
+            r = await client.post(self.URL, headers=headers, json=body)
+            pages += 1
+            # Every request is billed, even one that fails after a good page.
+            self.last_cost += self.PRICE_PER_REQUEST
+            if r.status_code >= 400:
+                # Google's body names the problem; the bare status does not.
+                try:
+                    message = r.json()["error"]["message"]
+                except (ValueError, KeyError, TypeError):
+                    message = r.reason_phrase
+                raise RuntimeError(f"Google Places HTTP {r.status_code}: {message}")
+            data = r.json()
+            for place in data.get("places") or []:
+                if (place.get("userRatingCount") or 0) < self.min_reviews:
+                    continue
+                out.append(self._to_business(place, query))
+            token = data.get("nextPageToken")
+            if not token:
+                break
+        return out[:query.limit]
+
+    def _to_business(self, place, query):
+        site = place.get("websiteUri") or ""
+        place_id = place.get("id") or ""
+        return Business(
+            name=(place.get("displayName") or {}).get("text") or "",
+            domain=normalize_domain(site),
+            website=site,
+            phone=place.get("nationalPhoneNumber") or "",
+            address=place.get("formattedAddress") or "",
+            location=query.location,
+            category=place.get("primaryType") or "",
+            rating=place.get("rating"),
+            review_count=place.get("userRatingCount"),
+            has_website=bool(site),
+            external_id=f"google_places:{place_id}" if place_id else "",
+            source_url=(f"https://www.google.com/maps/place/?q=place_id:{place_id}"
+                        if place_id else ""),
+            provider=self.key,
+        )
+
+
 PROVIDERS: dict[str, DiscoveryProvider] = {
     p.key: p for p in (
         OpenStreetMap(),
         DataForSEOListings(),
         DataForSEOSerp(),
         Serper(),
+        GooglePlacesText(),
     )
 }
 

@@ -7,8 +7,10 @@ anyone, and that directories never make it in.
 """
 
 import asyncio
+import json
 import os
 from contextlib import closing
+from pathlib import Path
 import tempfile
 
 import httpx
@@ -16,7 +18,7 @@ import pytest
 import pytest_asyncio
 
 from harvey.collectors import discover as D
-from harvey.config import EnvConfig, load_config
+from harvey.config import EnvConfig, load_config, load_env
 from harvey.signals import SIGNAL_CATALOG, seed_signal_catalog
 from harvey.state import StateManager
 
@@ -765,3 +767,157 @@ def test_homepage_prefers_stronger_brand_over_longer_partial_match():
     html = ('<meta property="og:site_name" content="Kettleman Landscaping">'
             '<title>Landscaping Professionals</title>')
     assert D.site_name_from_html(html, "kettlemanlandscaping.com") == "Kettleman Landscaping"
+
+
+# ── Google Places (New) ──
+
+PLACES_FIXTURES = Path(__file__).parent / "fixtures" / "places"
+
+
+def _places_fixture(name):
+    return json.loads((PLACES_FIXTURES / name).read_text(encoding="utf-8"))
+
+
+def _place(pid, name, reviews, site=""):
+    place = {"id": pid, "displayName": {"text": name}, "userRatingCount": reviews,
+             "formattedAddress": "Calle 1, San Luis Potosí",
+             "nationalPhoneNumber": "444 123 4567", "rating": 4.5,
+             "primaryType": "restaurant"}
+    if site:
+        place["websiteUri"] = site
+    return place
+
+
+PLACES_KEY = {"google_places_api_key": "secret-key"}
+PLACES_QUERY = D.DiscoveryQuery(term="taquería", location="San Luis Potosí")
+
+
+@pytest.mark.asyncio
+async def test_google_places_parses_listings():
+    body = {"places": [
+        _place("ChIJaaa", "Taquería Norte", 512, "https://taquerianorte.com.mx"),
+        _place("ChIJbbb", "Taquería Sur", 240),
+    ]}
+    provider = D.GooglePlacesText()
+    async with _client(lambda r: httpx.Response(200, json=body)) as client:
+        a, b = await provider.fetch(client, PLACES_KEY, PLACES_QUERY)
+
+    assert a.external_id == "google_places:ChIJaaa"
+    assert a.name == "Taquería Norte"
+    assert a.phone == "444 123 4567"
+    assert a.website == "https://taquerianorte.com.mx"
+    assert a.domain == "taquerianorte.com.mx" and a.has_website is True
+    assert a.location == "San Luis Potosí"
+    assert a.rating == 4.5 and a.review_count == 512
+    assert a.provider == "google_places"
+
+    # No website is a valid listing, not an error: keep it, with no domain.
+    assert b.external_id == "google_places:ChIJbbb"
+    assert b.website == "" and b.domain == "" and b.has_website is False
+
+
+@pytest.mark.asyncio
+async def test_google_places_drops_listings_with_few_reviews():
+    body = {"places": [
+        _place("A", "Exactly threshold", 100),
+        _place("B", "Just under", 99),
+        {"id": "C", "displayName": {"text": "No count"}},
+    ]}
+    async with _client(lambda r: httpx.Response(200, json=body)) as client:
+        out = await D.GooglePlacesText().fetch(client, PLACES_KEY, PLACES_QUERY)
+    assert [b.external_id for b in out] == ["google_places:A"]
+
+    # The cached response carries one 25-review listing among the top 4.
+    one_page = {"places": _places_fixture("text_search_page1.json")["places"]}
+    async with _client(lambda r: httpx.Response(200, json=one_page)) as client:
+        out = await D.GooglePlacesText().fetch(client, PLACES_KEY, PLACES_QUERY)
+    assert len(out) == 3
+    assert all(b.review_count >= 100 for b in out)
+
+
+@pytest.mark.asyncio
+async def test_google_places_follows_next_page_token():
+    page1 = _places_fixture("text_search_page1.json")
+    page2 = _places_fixture("text_search_page2.json")
+    seen = []
+
+    def handler(request):
+        body = json.loads(request.content)
+        seen.append(body)
+        return httpx.Response(200, json=page2 if "pageToken" in body else page1)
+
+    async with _client(handler) as client:
+        out = await D.GooglePlacesText().fetch(client, PLACES_KEY, PLACES_QUERY)
+
+    assert len(seen) == 2
+    assert "pageToken" not in seen[0]
+    assert seen[1]["pageToken"] == page1["nextPageToken"]
+    expected = [p["id"] for p in page1["places"] + page2["places"]
+                if p["userRatingCount"] >= 100]
+    assert [b.external_id for b in out] == [f"google_places:{i}" for i in expected]
+
+
+@pytest.mark.asyncio
+async def test_google_places_stops_at_three_pages_and_bills_each_one():
+    more = {"places": [_place("X", "Endless", 500)], "nextPageToken": "more"}
+    seen = []
+
+    def handler(request):
+        seen.append(request)
+        return httpx.Response(200, json=more)
+
+    provider = D.GooglePlacesText()
+    async with _client(handler) as client:
+        await provider.fetch(client, PLACES_KEY, PLACES_QUERY)
+    assert len(seen) == 3
+    assert provider.last_cost == pytest.approx(3 * 0.035)
+
+
+@pytest.mark.asyncio
+async def test_google_places_sends_key_mask_and_spanish_mexico_locale():
+    seen = {}
+
+    def handler(request):
+        seen["url"] = str(request.url)
+        seen["key"] = request.headers.get("x-goog-api-key")
+        seen["mask"] = request.headers.get("x-goog-fieldmask")
+        seen["body"] = json.loads(request.content)
+        return httpx.Response(200, json={"places": []})
+
+    async with _client(handler) as client:
+        await D.GooglePlacesText().fetch(client, PLACES_KEY, PLACES_QUERY)
+
+    assert seen["url"] == "https://places.googleapis.com/v1/places:searchText"
+    assert seen["key"] == "secret-key"
+    fields = seen["mask"].split(",")
+    assert "places.nationalPhoneNumber" in fields and "places.websiteUri" in fields
+    assert "nextPageToken" in fields
+    assert seen["body"]["languageCode"] == "es"
+    assert seen["body"]["regionCode"] == "MX"
+    assert seen["body"]["pageSize"] == 20
+    assert seen["body"]["textQuery"] == "taquería en San Luis Potosí"
+
+
+@pytest.mark.asyncio
+async def test_google_places_error_names_the_problem_and_never_the_key():
+    payload = {"error": {"message": "API key not valid. Please pass a valid API key."}}
+    with pytest.raises(RuntimeError, match="API key not valid") as exc:
+        async with _client(lambda r: httpx.Response(403, json=payload)) as client:
+            await D.GooglePlacesText().fetch(client, PLACES_KEY, PLACES_QUERY)
+    assert "secret-key" not in str(exc.value)
+
+
+def test_google_places_estimate_scales_with_queries():
+    provider = D.GooglePlacesText()
+    one = [PLACES_QUERY]
+    assert provider.estimate(one) == pytest.approx(0.105)  # 0.035 x 3 pages
+    assert provider.estimate(one * 4) == pytest.approx(4 * 0.105)
+    assert D.estimate_cost("google_places", one) == pytest.approx(0.105)
+
+
+def test_google_places_needs_its_key_and_is_registered(monkeypatch):
+    provider = D.PROVIDERS["google_places"]
+    assert provider.configured({"google_places_api_key": "k"})
+    assert not provider.configured({})
+    monkeypatch.setenv("GOOGLE_PLACES_API_KEY", "  places-789  ")
+    assert load_env().google_places_api_key == "places-789"
