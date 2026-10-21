@@ -1,0 +1,12 @@
+[Unit]
+Description=Harvey dashboard (loopback only; reach it through an SSH tunnel)
+After=network-online.target
+
+[Service]
+WorkingDirectory=%h/apps/harvey
+ExecStart=%h/apps/harvey/.venv/bin/harvey dashboard --host 127.0.0.1 --port 5555
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target
